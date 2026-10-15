@@ -1,7 +1,8 @@
 """The agent loop: think -> act -> observe -> repeat.
 
 `model` is anything with a `complete(messages, tools) -> (message, usage)`
-method. That is the whole contract, which is why tests can use a fake model.
+method (see horde.models.base.Model). That is the whole contract, which is
+why tests can use a fake model.
 
 Everything that happens is reported as an event (a plain dict) to `on_event`,
 so callers can print it, save it to a trace, or ignore it.
@@ -66,7 +67,8 @@ def run_agent(task: str, model, tools: list[Tool], max_steps: int = 10,
     def emit(event_type: str, **fields):
         on_event({"type": event_type, "elapsed": round(time.monotonic() - started, 3), **fields})
 
-    emit("run_start", task=task, tools=list(tools_by_name),
+    emit("run_start", task=task, model=getattr(model, "name", type(model).__name__),
+         tools=list(tools_by_name),
          limits={"max_steps": max_steps, "max_seconds": max_seconds, "max_tokens": max_tokens})
     try:
         for step in range(1, max_steps + 1):
@@ -82,8 +84,11 @@ def run_agent(task: str, model, tools: list[Tool], max_steps: int = 10,
             model_calls += 1
             usage.update({key: reply_usage.get(key) or 0 for key in TOKEN_KEYS})
             tool_calls = reply.get("tool_calls") or []
-            message = {"role": "assistant", "content": reply.get("content"),
-                       **({"tool_calls": tool_calls} if tool_calls else {})}
+            message = {"role": "assistant", "content": reply.get("content")}
+            if tool_calls:
+                message["tool_calls"] = tool_calls
+            if reply.get("provider_state"):  # opaque data the adapter needs back
+                message["provider_state"] = reply["provider_state"]
             messages.append(message)
             emit("model_call", step=step, duration=round(time.monotonic() - call_started, 3),
                  usage=reply_usage, message=message)

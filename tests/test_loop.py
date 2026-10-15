@@ -1,9 +1,7 @@
 import json
 
-import httpx
 import pytest
 
-from horde.groq import GroqModel
 from horde.builtin_tools import calculate, calculator
 from horde.loop import MAX_RESULT_CHARS, StepLimitReached, run_agent, run_tool
 from horde.tools import tool
@@ -113,31 +111,10 @@ def test_calculator_does_arithmetic_only():
         calculate("__import__('os').system('echo hi')")
 
 
-def test_groq_request_shape():
-    sent = {}
+def test_provider_state_is_kept_and_sent_back():
+    reply = tool_call("calculator", {"expression": "1+1"})
+    reply["provider_state"] = {"gemini": ["opaque"]}
+    model = FakeModel([reply, answer("2")])
 
-    def handler(request):
-        sent["url"] = str(request.url)
-        sent["auth"] = request.headers["authorization"]
-        sent["body"] = json.loads(request.content)
-        return httpx.Response(200, json={"choices": [{"message": answer("hi")}],
-                                         "usage": {"total_tokens": 42}})
-
-    model = GroqModel(model="test-model", api_key="secret",
-                      client=httpx.Client(transport=httpx.MockTransport(handler)))
-    reply, usage = model.complete([{"role": "user", "content": "hi"}], [calculator.schema()])
-
-    assert reply == answer("hi")
-    assert usage == {"total_tokens": 42}
-    assert sent["url"] == "https://api.groq.com/openai/v1/chat/completions"
-    assert sent["auth"] == "Bearer secret"
-    assert sent["body"]["model"] == "test-model"
-    assert sent["body"]["tools"][0]["function"]["name"] == "calculator"
-
-
-def test_groq_error_includes_response_body():
-    client = httpx.Client(transport=httpx.MockTransport(
-        lambda request: httpx.Response(401, text="invalid key")))
-    model = GroqModel(api_key="bad", client=client)
-    with pytest.raises(RuntimeError, match="401: invalid key"):
-        model.complete([], [])
+    run_agent("t", model, [calculator])
+    assert model.received[1][2]["provider_state"] == {"gemini": ["opaque"]}

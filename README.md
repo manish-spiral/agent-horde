@@ -26,7 +26,9 @@ uv run horde "what is 17 * 23 + 5?"
 
 Options:
 
-- `--model NAME` or `HORDE_MODEL=NAME`: which Groq model to use
+- `--provider NAME` or `HORDE_PROVIDER=NAME`: which provider (default `groq`, see below)
+- `--model NAME` or `HORDE_MODEL=NAME`: which model (default: the provider's, if it has one)
+- `--base-url URL`: override the provider's API address
 - `--max-steps N`: stop after N model calls (default 10)
 - `--max-seconds S`: stop if there's no answer after S seconds
 - `--max-tokens N`: stop once N tokens have been used (checked between model calls)
@@ -48,6 +50,33 @@ horde-trace replay ~/.horde/traces/<file>.jsonl   # rerun with the recorded mode
 ```
 
 Replay runs tools for real, behind the usual approval prompt.
+
+## Model providers
+
+| Provider | API format | Key variable | Default model |
+|----------|------------|--------------|---------------|
+| `groq` | OpenAI | `GROQ_API_KEY` | `openai/gpt-oss-120b` |
+| `anthropic` | Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-5-5` |
+| `gemini` | Gemini | `GEMINI_API_KEY` | pass `--model` |
+| `openai` | OpenAI | `OPENAI_API_KEY` | pass `--model` |
+| `openrouter` | OpenAI | `OPENROUTER_API_KEY` | pass `--model` |
+| `deepseek` | OpenAI | `DEEPSEEK_API_KEY` | pass `--model` |
+| `mistral` | OpenAI | `MISTRAL_API_KEY` | pass `--model` |
+| `xai` | OpenAI | `XAI_API_KEY` | pass `--model` |
+| `together` | OpenAI | `TOGETHER_API_KEY` | pass `--model` |
+| `fireworks` | OpenAI | `FIREWORKS_API_KEY` | pass `--model` |
+| `cerebras` | OpenAI | `CEREBRAS_API_KEY` | pass `--model` |
+| `ollama` | OpenAI | none (local) | pass `--model` |
+| `custom` | OpenAI | `HORDE_API_KEY` (optional) | pass `--model` and `--base-url` |
+
+```bash
+horde --provider anthropic "task"
+horde --provider gemini --model <gemini-model> "task"
+horde --provider custom --base-url http://localhost:8000/v1 --model my-model "task"
+```
+
+Model names change often; check the provider's model list. Defaults are only
+set where they've been verified.
 
 ## Tools
 

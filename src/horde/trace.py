@@ -38,6 +38,8 @@ def read_trace(path: str | Path) -> list[dict]:
 class ReplayModel:
     """Answers with the model replies recorded in a trace, in order. No API calls."""
 
+    name = "replay"
+
     def __init__(self, events: list[dict]):
         self.replies = [(event["message"], event["usage"])
                         for event in events if event["type"] == "model_call"]
@@ -60,7 +62,8 @@ def format_event(event: dict) -> str | None:
     """One readable line per event (None for events not worth showing)."""
     kind = event["type"]
     if kind == "run_start":
-        return f"task: {shorten(event['task'])}"
+        model = f" [{event['model']}]" if event.get("model") else ""
+        return f"task{model}: {shorten(event['task'])}"
     if kind == "model_call":
         tokens = event["usage"].get("total_tokens")
         return (f"[step {event['step']}] model {event['duration']:.2f}s"

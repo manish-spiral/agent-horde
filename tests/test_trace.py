@@ -110,7 +110,7 @@ def test_trace_directory_is_private(tmp_path):
 
 def test_cli_saves_a_trace(monkeypatch, private_trace_dir):
     fake = FakeModel([tool_call("calculator", {"expression": "6*7"}), answer("42")])
-    monkeypatch.setattr(cli, "GroqModel", lambda model=None: fake)
+    monkeypatch.setattr(cli, "create_model", lambda *args: fake)
     monkeypatch.setattr("sys.argv", ["horde", "multiply"])
 
     assert cli.main() == 0
@@ -170,7 +170,7 @@ def test_horde_trace_show_and_replay(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr("sys.argv", ["horde-trace", "show", str(path)])
     assert trace_cli.main() == 0
     out = capsys.readouterr().out
-    assert "task: multiply" in out and "calculator" in out and "answer:\n42" in out
+    assert "multiply" in out and "calculator" in out and "answer:\n42" in out
 
     monkeypatch.setattr("sys.argv", ["horde-trace", "replay", str(path)])
     assert trace_cli.main() == 0

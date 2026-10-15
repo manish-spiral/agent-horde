@@ -110,7 +110,7 @@ def test_terminal_approver_denies_without_terminal(monkeypatch):
 # --- CLI exit codes ---------------------------------------------------------
 
 def run_cli(monkeypatch, fake_model, *args):
-    monkeypatch.setattr(cli, "GroqModel", lambda model=None: fake_model)
+    monkeypatch.setattr(cli, "create_model", lambda *args: fake_model)
     monkeypatch.setattr("sys.argv", ["horde", "task", *args])
     return cli.main()
 
@@ -127,3 +127,11 @@ def test_ctrl_c_exits_cleanly(monkeypatch, capsys):
 def test_limit_is_reported_as_error(monkeypatch, capsys):
     assert run_cli(monkeypatch, SlowModel(), "--max-seconds", "0.05") == 1
     assert "error: no final answer after 0.05s" in capsys.readouterr().err
+
+
+def test_setup_error_creates_no_trace(monkeypatch, capsys, private_trace_dir):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr("sys.argv", ["horde", "--provider", "anthropic", "task"])
+    assert cli.main() == 1
+    assert "ANTHROPIC_API_KEY is not set" in capsys.readouterr().err
+    assert not private_trace_dir.exists()

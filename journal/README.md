@@ -27,6 +27,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 003 | [Feature 2: Tool interface and real tools](003-tools.md) | Feature |
 | 004 | [Feature 3: Control and safety](004-control-and-safety.md) | Feature |
 | 005 | [Feature 4: Observability](005-observability.md) | Feature |
+| 006 | [Feature 5: All major model providers](006-model-providers.md) | Feature |
 
 ## Reference
 

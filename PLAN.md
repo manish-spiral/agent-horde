@@ -27,7 +27,7 @@ The order is a proposal and will change as we learn.
 | 2  | Tool interface + basic tools | Adding a tool is trivial; read/write files, run shell (with approval) | done ([003](journal/003-tools.md)) |
 | 3  | Control & safety | Workspace boundary, "always allow", time limit, clean Ctrl+C | done ([004](journal/004-control-and-safety.md)) |
 | 4  | Observability | Events + JSONL trace of every step; token budget; `horde-trace show/replay` | done ([005](journal/005-observability.md)) |
-| 5  | Second model provider | Proves "any model"; the model abstraction is introduced here | planned |
+| 5  | All major model providers | 3 adapters (OpenAI-format, Anthropic, Gemini), 13 providers, `Model` protocol | done ([006](journal/006-model-providers.md)) |
 | 6  | Session persistence | Save and resume conversations | planned |
 | 7  | Self-correction | Errors and failed checks go back to the model to retry or verify | planned |
 | 8  | Planning | Agent keeps and updates an explicit task list | planned |
@@ -43,7 +43,8 @@ Beyond 13: no fixed ceiling — new features are proposed as needs appear.
 
 | Decision | Choice | Where explained |
 |----------|--------|-----------------|
-| First model provider | Groq | [journal/001](journal/001-language-choice.md) |
+| Model providers | Groq default; 13 providers via 3 API formats | [journal/001](journal/001-language-choice.md), [journal/006](journal/006-model-providers.md) |
+| Internal message format | OpenAI chat format + opaque `provider_state` | [journal/006](journal/006-model-providers.md) |
 | Implementation language | Python 3.12 | [journal/001](journal/001-language-choice.md) |
 | Git | Claude commits and pushes to `main` after asking each time | [journal/000](journal/000-project-kickoff.md) |
 | Default model | `openai/gpt-oss-120b` on Groq | [journal/003](journal/003-tools.md) |

@@ -1,12 +1,13 @@
 """Command line entry point: `horde "your task"`."""
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 from horde.builtin_tools import DEFAULT_TOOLS
-from horde.groq import GroqModel
 from horde.loop import LimitReached, run_agent
+from horde.models import PROVIDERS, create_model
 from horde.trace import DEFAULT_TRACE_DIR, TraceWriter, print_event
 
 PREVIEW_CHARS = 1000
@@ -41,7 +42,11 @@ class TerminalApprover:
 def main() -> int:
     parser = argparse.ArgumentParser(prog="horde", description="Run an agent on a task.")
     parser.add_argument("task", help="what you want the agent to do")
-    parser.add_argument("--model", help="model name (default: $HORDE_MODEL or a Groq default)")
+    parser.add_argument("--provider", choices=list(PROVIDERS),
+                        default=os.environ.get("HORDE_PROVIDER", "groq"),
+                        help="model provider (default: $HORDE_PROVIDER or groq)")
+    parser.add_argument("--model", help="model name (default: $HORDE_MODEL or the provider's default)")
+    parser.add_argument("--base-url", help="override the provider's API address")
     parser.add_argument("--max-steps", type=int, default=10)
     parser.add_argument("--max-seconds", type=float, help="stop if no answer after this long")
     parser.add_argument("--max-tokens", type=int, help="stop once this many tokens are used")
@@ -49,6 +54,11 @@ def main() -> int:
                         help=f"where to save the run's trace (default: {DEFAULT_TRACE_DIR})")
     args = parser.parse_args()
 
+    try:
+        model = create_model(args.provider, args.model, args.base_url)
+    except RuntimeError as error:  # bad setup: fail before creating a trace
+        print(f"error: {error}", file=sys.stderr)
+        return 1
     trace = TraceWriter(args.trace_dir)
 
     def on_event(event: dict) -> None:
@@ -56,7 +66,6 @@ def main() -> int:
         print_event(event)
 
     try:
-        model = GroqModel(model=args.model)
         answer = run_agent(args.task, model, DEFAULT_TOOLS, max_steps=args.max_steps,
                            max_seconds=args.max_seconds, max_tokens=args.max_tokens,
                            approve=TerminalApprover(), on_event=on_event)
