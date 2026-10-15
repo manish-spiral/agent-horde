@@ -33,6 +33,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 009 | [Feature 8: Planning](009-planning.md) | Feature |
 | 010 | [Feature 9: Automatic retries](010-retries.md) | Feature |
 | 011 | [Feature 10: Project instructions (AGENTS.md)](011-project-instructions.md) | Feature |
+| 012 | [Feature 11: Context clearing](012-context-clearing.md) | Feature |
 
 ## Reference
 

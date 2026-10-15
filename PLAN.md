@@ -32,6 +32,7 @@ The order is a proposal and will change as we learn.
 | 6  | Chat + session persistence | Interactive multi-turn chat; save and `--resume` conversations | done ([008](journal/008-chat-and-sessions.md)) |
 | 6b | Automatic retries | Rate limits / 5xx / network errors retried with backoff | done ([010](journal/010-retries.md)) |
 | 6c | Project instructions | `AGENTS.md` / `HORDE.md` added to the system prompt | done ([011](journal/011-project-instructions.md)) |
+| 6d | Context clearing | Old tool results cleared when the conversation gets too long | done ([012](journal/012-context-clearing.md)) |
 | 7  | Self-correction | Errors and failed checks go back to the model to retry or verify | planned |
 | 8  | Planning | `update_plan` tool: agent keeps and updates an explicit task list | done ([009](journal/009-planning.md)) |
 | 9  | External tools via MCP | Connect to any tool server | planned |

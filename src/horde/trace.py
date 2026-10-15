@@ -72,6 +72,8 @@ def format_event(event: dict) -> str | None:
         denied = " (denied)" if event["approval"] == "denied" else ""
         return (f"[step {event['step']}] {event['name']}({shorten(event['arguments'], 100)})"
                 f"{denied} -> {shorten(event['result'])}")
+    if kind == "context_cleared":
+        return f"context: cleared {event['tool_results']} old tool results"
     if kind == "run_end":
         reason = "" if event["outcome"] == "answer" else f": {event['error']}"
         return (f"{event['outcome']}{reason} — {event['steps']} steps, "

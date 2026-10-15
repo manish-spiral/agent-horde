@@ -25,6 +25,12 @@ SYSTEM_PROMPT = (
 # Cap them so one huge file or command output can't flood the context.
 MAX_RESULT_CHARS = 20_000
 
+# When the conversation grows past this many characters (~50k tokens), old tool
+# results are cleared; the newest KEEP_TOOL_RESULTS stay intact.
+MAX_CONTEXT_CHARS = 200_000
+KEEP_TOOL_RESULTS = 5
+CLEARED = "[old tool result cleared to save context]"
+
 TOKEN_KEYS = ("prompt_tokens", "completion_tokens", "total_tokens")
 
 # Decides whether a tool that needs approval may run: (tool name, arguments) -> yes/no.
@@ -91,6 +97,10 @@ def run_agent(task: str, model, tools: list[Tool], max_steps: int = 10,
             if max_tokens is not None and usage["total_tokens"] >= max_tokens:
                 raise TokenLimitReached(
                     f"used {usage['total_tokens']} of {max_tokens} tokens without a final answer")
+
+            cleared = clear_old_tool_results(messages)
+            if cleared:
+                emit("context_cleared", tool_results=cleared)
 
             # Think: ask the model what to do next.
             call_started = time.monotonic()
@@ -171,3 +181,14 @@ def run_tool(tools_by_name: dict[str, Tool], name: str, arguments: str,
         hidden = len(result) - MAX_RESULT_CHARS
         result = result[:MAX_RESULT_CHARS] + f"\n[truncated: {hidden} more characters]"
     return result
+
+
+def clear_old_tool_results(messages: list[dict], max_chars: int = MAX_CONTEXT_CHARS,
+                           keep: int = KEEP_TOOL_RESULTS) -> int:
+    """If the conversation is too big, blank out old tool results. Returns how many."""
+    if sum(len(str(m.get("content") or "")) for m in messages) <= max_chars:
+        return 0
+    old_results = [m for m in messages if m["role"] == "tool" and m["content"] != CLEARED][:-keep]
+    for message in old_results:
+        message["content"] = CLEARED
+    return len(old_results)
