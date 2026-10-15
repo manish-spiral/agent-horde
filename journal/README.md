@@ -26,6 +26,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 002 | [Feature 1: The core agent loop](002-core-loop.md) | Feature |
 | 003 | [Feature 2: Tool interface and real tools](003-tools.md) | Feature |
 | 004 | [Feature 3: Control and safety](004-control-and-safety.md) | Feature |
+| 005 | [Feature 4: Observability](005-observability.md) | Feature |
 
 ## Reference
 

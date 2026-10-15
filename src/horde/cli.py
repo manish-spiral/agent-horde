@@ -2,10 +2,12 @@
 
 import argparse
 import sys
+from pathlib import Path
 
 from horde.builtin_tools import DEFAULT_TOOLS
 from horde.groq import GroqModel
 from horde.loop import LimitReached, run_agent
+from horde.trace import DEFAULT_TRACE_DIR, TraceWriter, print_event
 
 PREVIEW_CHARS = 1000
 
@@ -42,19 +44,31 @@ def main() -> int:
     parser.add_argument("--model", help="model name (default: $HORDE_MODEL or a Groq default)")
     parser.add_argument("--max-steps", type=int, default=10)
     parser.add_argument("--max-seconds", type=float, help="stop if no answer after this long")
+    parser.add_argument("--max-tokens", type=int, help="stop once this many tokens are used")
+    parser.add_argument("--trace-dir", type=Path, default=DEFAULT_TRACE_DIR,
+                        help=f"where to save the run's trace (default: {DEFAULT_TRACE_DIR})")
     args = parser.parse_args()
+
+    trace = TraceWriter(args.trace_dir)
+
+    def on_event(event: dict) -> None:
+        trace(event)
+        print_event(event)
 
     try:
         model = GroqModel(model=args.model)
         answer = run_agent(args.task, model, DEFAULT_TOOLS, max_steps=args.max_steps,
-                           max_seconds=args.max_seconds, approve=TerminalApprover(),
-                           log=lambda line: print(line, file=sys.stderr))
+                           max_seconds=args.max_seconds, max_tokens=args.max_tokens,
+                           approve=TerminalApprover(), on_event=on_event)
     except (RuntimeError, LimitReached) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         print("\ninterrupted", file=sys.stderr)
         return 130  # conventional exit code for Ctrl+C
+    finally:
+        trace.close()
+        print(f"trace: {trace.path}", file=sys.stderr)
 
     print(answer)
     return 0

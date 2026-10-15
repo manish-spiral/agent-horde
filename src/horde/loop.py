@@ -1,11 +1,15 @@
 """The agent loop: think -> act -> observe -> repeat.
 
-`model` is anything with a `complete(messages, tools) -> message` method.
-That is the whole contract, which is why tests can use a fake model.
+`model` is anything with a `complete(messages, tools) -> (message, usage)`
+method. That is the whole contract, which is why tests can use a fake model.
+
+Everything that happens is reported as an event (a plain dict) to `on_event`,
+so callers can print it, save it to a trace, or ignore it.
 """
 
 import json
 import time
+from collections import Counter
 from typing import Callable
 
 from horde.tools import Tool
@@ -19,6 +23,8 @@ SYSTEM_PROMPT = (
 # Cap them so one huge file or command output can't flood the context.
 MAX_RESULT_CHARS = 20_000
 
+TOKEN_KEYS = ("prompt_tokens", "completion_tokens", "total_tokens")
+
 # Decides whether a tool that needs approval may run: (tool name, arguments) -> yes/no.
 Approver = Callable[[str, dict], bool]
 
@@ -28,21 +34,25 @@ def deny_all(name: str, arguments: dict) -> bool:
 
 
 class LimitReached(Exception):
-    pass
+    outcome = "limit"
 
 
 class StepLimitReached(LimitReached):
-    pass
+    outcome = "step_limit"
 
 
 class TimeLimitReached(LimitReached):
-    pass
+    outcome = "time_limit"
+
+
+class TokenLimitReached(LimitReached):
+    outcome = "token_limit"
 
 
 def run_agent(task: str, model, tools: list[Tool], max_steps: int = 10,
-              max_seconds: float | None = None,
+              max_seconds: float | None = None, max_tokens: int | None = None,
               approve: Approver = deny_all,
-              log: Callable[[str], None] = lambda _: None) -> str:
+              on_event: Callable[[dict], None] = lambda _: None) -> str:
     tools_by_name = {tool.name: tool for tool in tools}
     schemas = [tool.schema() for tool in tools]
     messages = [
@@ -50,31 +60,74 @@ def run_agent(task: str, model, tools: list[Tool], max_steps: int = 10,
         {"role": "user", "content": task},
     ]
     started = time.monotonic()
+    usage = Counter(dict.fromkeys(TOKEN_KEYS, 0))
+    model_calls = 0
 
-    for step in range(1, max_steps + 1):
-        if max_seconds is not None and time.monotonic() - started >= max_seconds:
-            raise TimeLimitReached(f"no final answer after {max_seconds}s")
+    def emit(event_type: str, **fields):
+        on_event({"type": event_type, "elapsed": round(time.monotonic() - started, 3), **fields})
 
-        # Think: ask the model what to do next.
-        reply = model.complete(messages, schemas)
-        tool_calls = reply.get("tool_calls") or []
-        messages.append({"role": "assistant", "content": reply.get("content"),
-                         **({"tool_calls": tool_calls} if tool_calls else {})})
+    emit("run_start", task=task, tools=list(tools_by_name),
+         limits={"max_steps": max_steps, "max_seconds": max_seconds, "max_tokens": max_tokens})
+    try:
+        for step in range(1, max_steps + 1):
+            if max_seconds is not None and time.monotonic() - started >= max_seconds:
+                raise TimeLimitReached(f"no final answer after {max_seconds}s")
+            if max_tokens is not None and usage["total_tokens"] >= max_tokens:
+                raise TokenLimitReached(
+                    f"used {usage['total_tokens']} of {max_tokens} tokens without a final answer")
 
-        # No tool call means the model is done.
-        if not tool_calls:
-            log(f"[step {step}] final answer")
-            return reply.get("content") or ""
+            # Think: ask the model what to do next.
+            call_started = time.monotonic()
+            reply, reply_usage = model.complete(messages, schemas)
+            model_calls += 1
+            usage.update({key: reply_usage.get(key) or 0 for key in TOKEN_KEYS})
+            tool_calls = reply.get("tool_calls") or []
+            message = {"role": "assistant", "content": reply.get("content"),
+                       **({"tool_calls": tool_calls} if tool_calls else {})}
+            messages.append(message)
+            emit("model_call", step=step, duration=round(time.monotonic() - call_started, 3),
+                 usage=reply_usage, message=message)
 
-        # Act + observe: run each requested tool and feed the result back.
-        for call in tool_calls:
-            name = call["function"]["name"]
-            arguments = call["function"]["arguments"]
-            result = run_tool(tools_by_name, name, arguments, approve)
-            log(f"[step {step}] {name}({arguments}) -> {result}")
-            messages.append({"role": "tool", "tool_call_id": call["id"], "content": result})
+            # No tool call means the model is done.
+            if not tool_calls:
+                answer = reply.get("content") or ""
+                emit("run_end", outcome="answer", answer=answer, steps=model_calls, usage=dict(usage))
+                return answer
 
-    raise StepLimitReached(f"no final answer after {max_steps} steps")
+            # Act + observe: run each requested tool and feed the result back.
+            for call in tool_calls:
+                result, approval, duration = _run_recorded(tools_by_name, call, approve)
+                emit("tool_call", step=step, id=call["id"], name=call["function"]["name"],
+                     arguments=call["function"]["arguments"], approval=approval,
+                     result=result, duration=duration)
+                messages.append({"role": "tool", "tool_call_id": call["id"], "content": result})
+
+        raise StepLimitReached(f"no final answer after {max_steps} steps")
+    except BaseException as error:
+        outcome = getattr(error, "outcome",
+                          "interrupted" if isinstance(error, KeyboardInterrupt) else "error")
+        emit("run_end", outcome=outcome, error=str(error) or type(error).__name__,
+             steps=model_calls, usage=dict(usage))
+        raise
+
+
+def _run_recorded(tools_by_name: dict[str, Tool], call: dict,
+                  approve: Approver) -> tuple[str, str, float]:
+    """Run one tool call, also reporting whether approval was needed and given."""
+    decision = {}
+
+    def approve_and_remember(name: str, arguments: dict) -> bool:
+        decision["approved"] = approve(name, arguments)
+        return decision["approved"]
+
+    started = time.monotonic()
+    result = run_tool(tools_by_name, call["function"]["name"],
+                      call["function"]["arguments"], approve_and_remember)
+    if not decision:
+        approval = "not_needed"
+    else:
+        approval = "approved" if decision["approved"] else "denied"
+    return result, approval, round(time.monotonic() - started, 3)
 
 
 def run_tool(tools_by_name: dict[str, Tool], name: str, arguments: str,

@@ -21,8 +21,8 @@ class GroqModel:
             raise RuntimeError("GROQ_API_KEY is not set")
         self.client = client or httpx.Client(timeout=60.0)
 
-    def complete(self, messages: list[dict], tools: list[dict]) -> dict:
-        """Send the conversation so far and return the model's next message."""
+    def complete(self, messages: list[dict], tools: list[dict]) -> tuple[dict, dict]:
+        """Send the conversation so far. Returns (the model's next message, token usage)."""
         body = {"model": self.model, "messages": messages}
         if tools:
             body["tools"] = tools
@@ -33,4 +33,5 @@ class GroqModel:
         )
         if response.is_error:
             raise RuntimeError(f"Groq API error {response.status_code}: {response.text}")
-        return response.json()["choices"][0]["message"]
+        data = response.json()
+        return data["choices"][0]["message"], data.get("usage", {})

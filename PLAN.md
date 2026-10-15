@@ -26,7 +26,7 @@ The order is a proposal and will change as we learn.
 | 1  | Core agent loop | Model gets a task, calls a tool, sees the result, loops until done, with a CLI. Tested with a fake model. | done ([002](journal/002-core-loop.md)) |
 | 2  | Tool interface + basic tools | Adding a tool is trivial; read/write files, run shell (with approval) | done ([003](journal/003-tools.md)) |
 | 3  | Control & safety | Workspace boundary, "always allow", time limit, clean Ctrl+C | done ([004](journal/004-control-and-safety.md)) |
-| 4  | Observability | Structured trace of every step; inspect and replay | planned |
+| 4  | Observability | Events + JSONL trace of every step; token budget; `horde-trace show/replay` | done ([005](journal/005-observability.md)) |
 | 5  | Second model provider | Proves "any model"; the model abstraction is introduced here | planned |
 | 6  | Session persistence | Save and resume conversations | planned |
 | 7  | Self-correction | Errors and failed checks go back to the model to retry or verify | planned |
@@ -47,6 +47,7 @@ Beyond 13: no fixed ceiling — new features are proposed as needs appear.
 | Implementation language | Python 3.12 | [journal/001](journal/001-language-choice.md) |
 | Git | Claude commits and pushes to `main` after asking each time | [journal/000](journal/000-project-kickoff.md) |
 | Default model | `openai/gpt-oss-120b` on Groq | [journal/003](journal/003-tools.md) |
+| Trace location | `~/.horde/traces/`, JSON Lines | [journal/005](journal/005-observability.md) |
 
 ## How we work
 

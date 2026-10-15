@@ -29,10 +29,25 @@ Options:
 - `--model NAME` or `HORDE_MODEL=NAME`: which Groq model to use
 - `--max-steps N`: stop after N model calls (default 10)
 - `--max-seconds S`: stop if there's no answer after S seconds
+- `--max-tokens N`: stop once N tokens have been used (checked between model calls)
+- `--trace-dir DIR`: where to save the trace (default `~/.horde/traces`)
 
 Ctrl+C stops the run at any point (exit code 130).
 
-Steps are logged to stderr; the final answer goes to stdout.
+One line per step is shown on stderr; the final answer goes to stdout.
+
+## Traces
+
+Every run is saved as a JSON Lines trace (one event per line): the task, every
+model reply with token usage, every tool call with its approval and result, and
+how the run ended.
+
+```bash
+horde-trace show   ~/.horde/traces/<file>.jsonl   # readable timeline
+horde-trace replay ~/.horde/traces/<file>.jsonl   # rerun with the recorded model replies (no API calls)
+```
+
+Replay runs tools for real, behind the usual approval prompt.
 
 ## Tools
 

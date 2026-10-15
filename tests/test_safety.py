@@ -67,7 +67,7 @@ class SlowModel:
         time.sleep(0.1)
         return {"role": "assistant", "content": None, "tool_calls": [{
             "id": "1", "type": "function",
-            "function": {"name": "nothing", "arguments": "{}"}}]}
+            "function": {"name": "nothing", "arguments": "{}"}}]}, {}
 
 
 def test_stops_at_time_limit():

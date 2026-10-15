@@ -12,13 +12,14 @@ from horde.tools import tool
 class FakeModel:
     """Returns scripted replies in order and records what it was sent."""
 
-    def __init__(self, replies):
+    def __init__(self, replies, usage=None):
         self.replies = list(replies)
+        self.usage = usage or {}
         self.received = []
 
     def complete(self, messages, tools):
         self.received.append([dict(m) for m in messages])
-        return self.replies.pop(0)
+        return self.replies.pop(0), self.usage
 
 
 def tool_call(name, arguments, call_id="call_1"):
@@ -119,13 +120,15 @@ def test_groq_request_shape():
         sent["url"] = str(request.url)
         sent["auth"] = request.headers["authorization"]
         sent["body"] = json.loads(request.content)
-        return httpx.Response(200, json={"choices": [{"message": answer("hi")}]})
+        return httpx.Response(200, json={"choices": [{"message": answer("hi")}],
+                                         "usage": {"total_tokens": 42}})
 
     model = GroqModel(model="test-model", api_key="secret",
                       client=httpx.Client(transport=httpx.MockTransport(handler)))
-    reply = model.complete([{"role": "user", "content": "hi"}], [calculator.schema()])
+    reply, usage = model.complete([{"role": "user", "content": "hi"}], [calculator.schema()])
 
     assert reply == answer("hi")
+    assert usage == {"total_tokens": 42}
     assert sent["url"] == "https://api.groq.com/openai/v1/chat/completions"
     assert sent["auth"] == "Bearer secret"
     assert sent["body"]["model"] == "test-model"
