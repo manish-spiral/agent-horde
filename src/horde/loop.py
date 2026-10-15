@@ -17,6 +17,7 @@ from horde.tools import Tool
 
 SYSTEM_PROMPT = (
     "You are a helpful agent. Use the available tools when they help. "
+    "For tasks with several steps, keep a plan with update_plan and update it as you go. "
     "When you have the final answer, reply without calling any tool."
 )
 

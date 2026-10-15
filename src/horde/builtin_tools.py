@@ -141,6 +141,27 @@ def search_files(
     return "\n".join(matches) or "No matches"
 
 
+# --- planning ---------------------------------------------------------------
+# The plan lives in the conversation itself: the model sends the whole list each
+# time, and the latest tool result is the current plan. No hidden state.
+
+PLAN_MARKS = ("[ ]", "[~]", "[x]")
+
+
+@tool
+def update_plan(
+    plan: Annotated[str, "The whole task list, one item per line, each starting with "
+                         "[ ] (to do), [~] (in progress) or [x] (done)"],
+) -> str:
+    """Write down or update your step-by-step plan for a multi-step task.
+    Send the complete list every time; mark items done as you finish them."""
+    items = [line.strip() for line in plan.splitlines() if line.strip()]
+    if not items or not all(item.startswith(PLAN_MARKS) for item in items):
+        raise ValueError("every line must start with [ ], [~] or [x]")
+    done = sum(item.startswith("[x]") for item in items)
+    return f"Plan updated ({done}/{len(items)} done):\n" + "\n".join(items)
+
+
 # --- shell ------------------------------------------------------------------
 
 @tool(needs_approval=True)
@@ -160,4 +181,4 @@ def run_shell(
 
 
 DEFAULT_TOOLS = [calculator, read_file, write_file, edit_file, list_files, search_files,
-                 run_shell]
+                 update_plan, run_shell]
