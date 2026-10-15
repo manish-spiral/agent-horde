@@ -32,6 +32,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 008 | [Feature 7: Interactive chat and saved sessions](008-chat-and-sessions.md) | Feature |
 | 009 | [Feature 8: Planning](009-planning.md) | Feature |
 | 010 | [Feature 9: Automatic retries](010-retries.md) | Feature |
+| 011 | [Feature 10: Project instructions (AGENTS.md)](011-project-instructions.md) | Feature |
 
 ## Reference
 

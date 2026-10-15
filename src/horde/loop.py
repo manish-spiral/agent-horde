@@ -51,8 +51,12 @@ class TokenLimitReached(LimitReached):
     outcome = "token_limit"
 
 
-def new_conversation() -> list[dict]:
-    return [{"role": "system", "content": SYSTEM_PROMPT}]
+def new_conversation(instructions: str | None = None) -> list[dict]:
+    """Start a conversation. `instructions` (e.g. from AGENTS.md) extend the system prompt."""
+    prompt = SYSTEM_PROMPT
+    if instructions:
+        prompt += f"\n\nProject instructions:\n{instructions.strip()}"
+    return [{"role": "system", "content": prompt}]
 
 
 def run_agent(task: str, model, tools: list[Tool], max_steps: int = 10,

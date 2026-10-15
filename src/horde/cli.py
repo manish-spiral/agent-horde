@@ -65,7 +65,7 @@ def main() -> int:
         if args.resume:
             session_id, messages = load_session(args.session_dir, args.resume)
         else:
-            session_id, messages = new_session_id(), new_conversation()
+            session_id, messages = new_session_id(), new_conversation(project_instructions())
     except RuntimeError as error:  # bad setup: fail before creating a trace
         print(f"error: {error}", file=sys.stderr)
         return 1
@@ -97,6 +97,18 @@ def main() -> int:
         print(f"trace: {trace.path}", file=sys.stderr)
         print(f"session: {session_id} (resume with --resume {session_id})", file=sys.stderr)
     return exit_code
+
+
+# Files whose contents are added to the system prompt, if found in the working directory.
+INSTRUCTION_FILES = ("AGENTS.md", "HORDE.md")
+
+
+def project_instructions() -> str | None:
+    found = [Path(name) for name in INSTRUCTION_FILES if Path(name).is_file()]
+    if not found:
+        return None
+    print(f"instructions: {', '.join(map(str, found))}", file=sys.stderr)
+    return "\n\n".join(file.read_text(encoding="utf-8") for file in found)
 
 
 def chat_turns():

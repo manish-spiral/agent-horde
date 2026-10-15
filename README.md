@@ -60,6 +60,11 @@ horde-trace replay ~/.horde/traces/<file>.jsonl   # rerun with the recorded mode
 
 Replay runs tools for real, behind the usual approval prompt.
 
+## Project instructions
+
+Put an `AGENTS.md` (or `HORDE.md`) in your project. Its contents are added to
+the agent's system prompt for every new conversation started there.
+
 ## Model providers
 
 | Provider | API format | Key variable | Default model |
