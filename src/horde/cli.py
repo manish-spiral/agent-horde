@@ -6,8 +6,9 @@ import sys
 from pathlib import Path
 
 from horde.builtin_tools import DEFAULT_TOOLS
-from horde.loop import LimitReached, run_agent
+from horde.loop import LimitReached, new_conversation, run_agent
 from horde.models import PROVIDERS, create_model
+from horde.session import DEFAULT_SESSION_DIR, load_session, new_session_id, save_session
 from horde.trace import DEFAULT_TRACE_DIR, TraceWriter, print_event
 
 PREVIEW_CHARS = 1000
@@ -41,7 +42,12 @@ class TerminalApprover:
 
 def main() -> int:
     parser = argparse.ArgumentParser(prog="horde", description="Run an agent on a task.")
-    parser.add_argument("task", help="what you want the agent to do")
+    parser.add_argument("task", nargs="?",
+                        help="what you want the agent to do (omit for an interactive chat)")
+    parser.add_argument("--resume", metavar="SESSION",
+                        help="continue a saved session ('last' for the most recent)")
+    parser.add_argument("--session-dir", type=Path, default=DEFAULT_SESSION_DIR,
+                        help=f"where sessions are saved (default: {DEFAULT_SESSION_DIR})")
     parser.add_argument("--provider", choices=list(PROVIDERS),
                         default=os.environ.get("HORDE_PROVIDER", "groq"),
                         help="model provider (default: $HORDE_PROVIDER or groq)")
@@ -56,31 +62,55 @@ def main() -> int:
 
     try:
         model = create_model(args.provider, args.model, args.base_url)
+        if args.resume:
+            session_id, messages = load_session(args.session_dir, args.resume)
+        else:
+            session_id, messages = new_session_id(), new_conversation()
     except RuntimeError as error:  # bad setup: fail before creating a trace
         print(f"error: {error}", file=sys.stderr)
         return 1
     trace = TraceWriter(args.trace_dir)
+    approve = TerminalApprover()  # one per session, so "always" lasts the whole chat
 
     def on_event(event: dict) -> None:
         trace(event)
         print_event(event)
 
+    exit_code = 0
     try:
-        answer = run_agent(args.task, model, DEFAULT_TOOLS, max_steps=args.max_steps,
-                           max_seconds=args.max_seconds, max_tokens=args.max_tokens,
-                           approve=TerminalApprover(), on_event=on_event)
-    except (RuntimeError, LimitReached) as error:
-        print(f"error: {error}", file=sys.stderr)
-        return 1
+        for task in [args.task] if args.task else chat_turns():
+            try:
+                answer = run_agent(task, model, DEFAULT_TOOLS, max_steps=args.max_steps,
+                                   max_seconds=args.max_seconds, max_tokens=args.max_tokens,
+                                   approve=approve, on_event=on_event, messages=messages)
+                print(answer)
+            except (RuntimeError, LimitReached) as error:
+                print(f"error: {error}", file=sys.stderr)
+                exit_code = 1
+            save_session(args.session_dir, session_id, messages)
     except KeyboardInterrupt:
         print("\ninterrupted", file=sys.stderr)
-        return 130  # conventional exit code for Ctrl+C
+        exit_code = 130  # conventional exit code for Ctrl+C
     finally:
+        save_session(args.session_dir, session_id, messages)
         trace.close()
         print(f"trace: {trace.path}", file=sys.stderr)
+        print(f"session: {session_id} (resume with --resume {session_id})", file=sys.stderr)
+    return exit_code
 
-    print(answer)
-    return 0
+
+def chat_turns():
+    """Read tasks from the terminal until 'exit', 'quit' or end of input."""
+    while True:
+        print("\n> ", end="", file=sys.stderr, flush=True)
+        try:
+            line = input().strip()
+        except EOFError:
+            return
+        if line in ("exit", "quit"):
+            return
+        if line:
+            yield line
 
 
 if __name__ == "__main__":

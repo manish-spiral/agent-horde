@@ -50,16 +50,25 @@ class TokenLimitReached(LimitReached):
     outcome = "token_limit"
 
 
+def new_conversation() -> list[dict]:
+    return [{"role": "system", "content": SYSTEM_PROMPT}]
+
+
 def run_agent(task: str, model, tools: list[Tool], max_steps: int = 10,
               max_seconds: float | None = None, max_tokens: int | None = None,
               approve: Approver = deny_all,
-              on_event: Callable[[dict], None] = lambda _: None) -> str:
+              on_event: Callable[[dict], None] = lambda _: None,
+              messages: list[dict] | None = None) -> str:
+    """Work on `task` until there's an answer.
+
+    Pass `messages` to continue an earlier conversation: the task and
+    everything that happens are appended to that same list.
+    """
     tools_by_name = {tool.name: tool for tool in tools}
     schemas = [tool.schema() for tool in tools]
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": task},
-    ]
+    if messages is None:
+        messages = new_conversation()
+    messages.append({"role": "user", "content": task})
     started = time.monotonic()
     usage = Counter(dict.fromkeys(TOKEN_KEYS, 0))
     model_calls = 0

@@ -24,6 +24,15 @@ export GROQ_API_KEY=...
 uv run horde "what is 17 * 23 + 5?"
 ```
 
+Run `horde` with no task for an interactive chat (type `exit` to leave).
+Every conversation is saved to `~/.horde/sessions/`:
+
+```bash
+uv run horde                                # chat
+uv run horde --resume last "and now..."      # continue the most recent session
+uv run horde --resume <session-id>           # continue a specific one, as a chat
+```
+
 Options:
 
 - `--provider NAME` or `HORDE_PROVIDER=NAME`: which provider (default `groq`, see below)

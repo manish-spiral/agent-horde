@@ -29,6 +29,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 005 | [Feature 4: Observability](005-observability.md) | Feature |
 | 006 | [Feature 5: All major model providers](006-model-providers.md) | Feature |
 | 007 | [Feature 6: Coding tools](007-coding-tools.md) | Feature |
+| 008 | [Feature 7: Interactive chat and saved sessions](008-chat-and-sessions.md) | Feature |
 
 ## Reference
 

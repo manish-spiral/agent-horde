@@ -29,7 +29,7 @@ The order is a proposal and will change as we learn.
 | 4  | Observability | Events + JSONL trace of every step; token budget; `horde-trace show/replay` | done ([005](journal/005-observability.md)) |
 | 5  | All major model providers | 3 adapters (OpenAI-format, Anthropic, Gemini), 13 providers, `Model` protocol | done ([006](journal/006-model-providers.md)) |
 | 5b | Coding tools | `edit_file`, `list_files`, `search_files` | done ([007](journal/007-coding-tools.md)) |
-| 6  | Session persistence | Save and resume conversations | planned |
+| 6  | Chat + session persistence | Interactive multi-turn chat; save and `--resume` conversations | done ([008](journal/008-chat-and-sessions.md)) |
 | 7  | Self-correction | Errors and failed checks go back to the model to retry or verify | planned |
 | 8  | Planning | Agent keeps and updates an explicit task list | planned |
 | 9  | External tools via MCP | Connect to any tool server | planned |
