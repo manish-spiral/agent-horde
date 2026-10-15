@@ -1,0 +1,33 @@
+# Journal
+
+This folder is the learning log of the project. Every step — planning,
+decisions, and each feature — gets one numbered entry, written at the time it
+happened. Read it in order to see how a real project goes from an idea to working software.
+
+## How to read it
+
+- Entries are numbered: `000-…`, `001-…`, `002-…`. Read them in order.
+- Each entry follows the same shape:
+  - **Goal**: what this step is trying to achieve
+  - **Context**: what we knew and what constrained us
+  - **Options considered**: the alternatives and their trade-offs
+  - **Decision**: what we chose and why
+  - **What was done**: the concrete changes (files, commands)
+  - **How it was tested**: how we know it works
+  - **What you should learn here**: the general lesson, beyond this project
+  - **Next**: what comes after
+
+## Index
+
+| # | Entry | Type |
+|---|-------|------|
+| 000 | [Project kickoff](000-project-kickoff.md) | Planning |
+| 001 | [Choosing a language and model provider](001-language-choice.md) | Decision |
+| 002 | [Feature 1: The core agent loop](002-core-loop.md) | Feature |
+
+## Reference
+
+Background material that isn't a step, but helps you understand the steps.
+
+- [The agent harness landscape](ref-harness-landscape.md): major harnesses and their languages
+
