@@ -117,6 +117,35 @@ no terminal gives denied.
 
 Still not tested live against Groq (no key yet).
 
+## Live test (first run against Groq)
+
+Task: `horde "what is 17 * 23 + 5? use the calculator"`, run with no
+terminal attached, so every approval request is answered "no".
+
+1. **The default model had been retired.** Groq answered
+   `404 … model llama-3.3-70b-versatile does not exist`. Because `groq.py`
+   includes the response body in its errors, the cause was obvious at once.
+   Listing the models (`GET /openai/v1/models`) showed the tool-capable chat
+   models available: `openai/gpt-oss-120b`, `openai/gpt-oss-20b`,
+   `qwen/qwen3.8-27b`. The default is now `openai/gpt-oss-120b`.
+2. **`openai/gpt-oss-120b`**: `calculator("17 * 23 + 5") -> 396`, then the
+   final answer. 2 steps, exactly as intended.
+3. **`qwen/qwen3.8-27b`**: its *first* action was a `run_shell` call nobody
+   asked for, trying to write files into `.gsd-global/rules/` and
+   `.gsd-local/`. The approval check denied it, the model received
+   `Error: the user did not allow run_shell to run`, then used the
+   calculator and answered 396 correctly. No files were created.
+
+Lessons from the live run:
+- **Models do unexpected things, even on trivial tasks.** The approval gate
+  isn't theoretical; it stopped a real unrequested side effect on the very
+  first live run.
+- **Fake-model tests prove the harness logic; only live runs reveal model
+  behavior.** You need both.
+- **Model names expire.** Keep the default in one place and overridable
+  (`--model`, `HORDE_MODEL`).
+- **Good error messages pay off immediately.**
+
 ## Known gaps (on purpose, for feature 3)
 
 - **`read_file` can read any file** your user can, e.g. `~/.ssh/id_rsa`, and
