@@ -48,8 +48,19 @@ def calculator(expression: Annotated[str, "The expression, e.g. '17 * 23 + 5'"])
 
 
 # --- files ------------------------------------------------------------------
+# The working directory is the agent's workspace. Reading inside it is free;
+# touching anything outside it needs the user's approval.
 
-@tool
+def is_inside_workspace(path: str) -> bool:
+    """True if `path` resolves (following symlinks and '..') to inside the working directory."""
+    return Path(path).resolve().is_relative_to(Path.cwd().resolve())
+
+
+def _path_outside_workspace(arguments: dict) -> bool:
+    return not is_inside_workspace(arguments["path"])
+
+
+@tool(needs_approval=_path_outside_workspace)
 def read_file(path: Annotated[str, "File path, relative to the working directory or absolute"]) -> str:
     """Read a text file and return its contents."""
     return Path(path).read_text(encoding="utf-8", errors="replace")

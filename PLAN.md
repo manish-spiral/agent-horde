@@ -25,7 +25,7 @@ The order is a proposal and will change as we learn.
 |----|---------|-----------------|--------|
 | 1  | Core agent loop | Model gets a task, calls a tool, sees the result, loops until done, with a CLI. Tested with a fake model. | done ([002](journal/002-core-loop.md)) |
 | 2  | Tool interface + basic tools | Adding a tool is trivial; read/write files, run shell (with approval) | done ([003](journal/003-tools.md)) |
-| 3  | Control & safety | Approve/deny tool calls, step and cost limits, interrupt | planned |
+| 3  | Control & safety | Workspace boundary, "always allow", time limit, clean Ctrl+C | done ([004](journal/004-control-and-safety.md)) |
 | 4  | Observability | Structured trace of every step; inspect and replay | planned |
 | 5  | Second model provider | Proves "any model"; the model abstraction is introduced here | planned |
 | 6  | Session persistence | Save and resume conversations | planned |
@@ -45,7 +45,8 @@ Beyond 13: no fixed ceiling — new features are proposed as needs appear.
 |----------|--------|-----------------|
 | First model provider | Groq | [journal/001](journal/001-language-choice.md) |
 | Implementation language | Python 3.12 | [journal/001](journal/001-language-choice.md) |
-| Git | Handled by the project owner | [journal/000](journal/000-project-kickoff.md) |
+| Git | Claude commits and pushes to `main` after asking each time | [journal/000](journal/000-project-kickoff.md) |
+| Default model | `openai/gpt-oss-120b` on Groq | [journal/003](journal/003-tools.md) |
 
 ## How we work
 
@@ -53,4 +54,4 @@ Beyond 13: no fixed ceiling — new features are proposed as needs appear.
 2. Build one small feature.
 3. Test it.
 4. Document it in `journal/`.
-5. Hand over for commit, then ask before the next feature.
+5. Ask, then commit and push. Ask before the next feature.

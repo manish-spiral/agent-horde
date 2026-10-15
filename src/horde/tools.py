@@ -23,7 +23,17 @@ class Tool:
     description: str
     parameters: dict  # JSON Schema describing the arguments
     function: Callable[..., str]
-    needs_approval: bool = False  # ask the user before running it
+    # Ask the user before running it: always (True), never (False), or decided
+    # per call by a function that looks at the arguments.
+    needs_approval: bool | Callable[[dict], bool] = False
+
+    def requires_approval(self, arguments: dict) -> bool:
+        if not callable(self.needs_approval):
+            return self.needs_approval
+        try:
+            return bool(self.needs_approval(arguments))
+        except Exception:
+            return True  # can't decide, so ask (fail closed)
 
     def schema(self) -> dict:
         """The tool description in the format chat-completions APIs expect."""
@@ -37,7 +47,8 @@ class Tool:
         }
 
 
-def tool(function: Callable | None = None, *, needs_approval: bool = False):
+def tool(function: Callable | None = None, *,
+         needs_approval: bool | Callable[[dict], bool] = False):
     """Turn a typed, documented function into a Tool.
 
     Usable as `@tool` or `@tool(needs_approval=True)`.

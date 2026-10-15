@@ -28,6 +28,9 @@ Options:
 
 - `--model NAME` or `HORDE_MODEL=NAME`: which Groq model to use
 - `--max-steps N`: stop after N model calls (default 10)
+- `--max-seconds S`: stop if there's no answer after S seconds
+
+Ctrl+C stops the run at any point (exit code 130).
 
 Steps are logged to stderr; the final answer goes to stdout.
 
@@ -36,12 +39,13 @@ Steps are logged to stderr; the final answer goes to stdout.
 | Tool | Asks before running |
 |------|---------------------|
 | `calculator` | no |
-| `read_file` | no |
+| `read_file` | only for paths outside the working directory |
 | `write_file` | yes |
 | `run_shell` | yes |
 
-Tools that change things show you their arguments and wait for `y`.
-Anything else, or no terminal, means no.
+The prompt shows the tool and its arguments. Answer `y` (yes), `n` (no) or
+`a` (always allow this tool for the rest of this run). Anything else, or no
+terminal, means no.
 
 ### Adding a tool
 

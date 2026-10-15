@@ -35,10 +35,9 @@ def test_tool_decorator_rejects_unsupported_types():
             return ""
 
 
-def test_only_side_effect_tools_need_approval():
-    assert read_file.needs_approval is False
-    assert write_file.needs_approval is True
-    assert run_shell.needs_approval is True
+def test_side_effect_tools_always_need_approval():
+    assert write_file.requires_approval({"path": "x", "content": ""}) is True
+    assert run_shell.requires_approval({"command": "ls"}) is True
 
 
 def test_write_then_read_file(tmp_path):

@@ -5,6 +5,7 @@ That is the whole contract, which is why tests can use a fake model.
 """
 
 import json
+import time
 from typing import Callable
 
 from horde.tools import Tool
@@ -26,11 +27,20 @@ def deny_all(name: str, arguments: dict) -> bool:
     return False
 
 
-class StepLimitReached(Exception):
+class LimitReached(Exception):
+    pass
+
+
+class StepLimitReached(LimitReached):
+    pass
+
+
+class TimeLimitReached(LimitReached):
     pass
 
 
 def run_agent(task: str, model, tools: list[Tool], max_steps: int = 10,
+              max_seconds: float | None = None,
               approve: Approver = deny_all,
               log: Callable[[str], None] = lambda _: None) -> str:
     tools_by_name = {tool.name: tool for tool in tools}
@@ -39,8 +49,12 @@ def run_agent(task: str, model, tools: list[Tool], max_steps: int = 10,
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": task},
     ]
+    started = time.monotonic()
 
     for step in range(1, max_steps + 1):
+        if max_seconds is not None and time.monotonic() - started >= max_seconds:
+            raise TimeLimitReached(f"no final answer after {max_seconds}s")
+
         # Think: ask the model what to do next.
         reply = model.complete(messages, schemas)
         tool_calls = reply.get("tool_calls") or []
@@ -75,7 +89,7 @@ def run_tool(tools_by_name: dict[str, Tool], name: str, arguments: str,
         return f"Error: arguments are not valid JSON: {error}"
     if not isinstance(parsed, dict):
         return "Error: arguments must be a JSON object"
-    if tool.needs_approval and not approve(name, parsed):
+    if tool.requires_approval(parsed) and not approve(name, parsed):
         return f"Error: the user did not allow {name} to run"
     try:
         result = str(tool.function(**parsed))
