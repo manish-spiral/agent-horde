@@ -85,6 +85,9 @@ set where they've been verified.
 | `calculator` | no |
 | `read_file` | only for paths outside the working directory |
 | `write_file` | yes |
+| `edit_file` | yes |
+| `list_files` | only outside the working directory |
+| `search_files` | only outside the working directory |
 | `run_shell` | yes |
 
 The prompt shows the tool and its arguments. Answer `y` (yes), `n` (no) or

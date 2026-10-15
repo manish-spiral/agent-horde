@@ -2,6 +2,7 @@
 
 import ast
 import operator
+import re
 import subprocess
 from pathlib import Path
 from typing import Annotated
@@ -57,7 +58,7 @@ def is_inside_workspace(path: str) -> bool:
 
 
 def _path_outside_workspace(arguments: dict) -> bool:
-    return not is_inside_workspace(arguments["path"])
+    return not is_inside_workspace(arguments.get("path", "."))
 
 
 @tool(needs_approval=_path_outside_workspace)
@@ -78,6 +79,68 @@ def write_file(
     return f"Wrote {len(content)} characters to {path}"
 
 
+@tool(needs_approval=True)
+def edit_file(
+    path: Annotated[str, "File to edit"],
+    old_text: Annotated[str, "Exact text to replace; must appear exactly once"],
+    new_text: Annotated[str, "Replacement text"],
+) -> str:
+    """Replace one exact piece of text in a file. Safer than rewriting the whole file."""
+    file = Path(path)
+    text = file.read_text(encoding="utf-8")
+    count = text.count(old_text)
+    if count != 1:
+        raise ValueError(f"old_text must appear exactly once, found {count} times; "
+                         "include more surrounding lines to make it unique")
+    file.write_text(text.replace(old_text, new_text), encoding="utf-8")
+    return f"Edited {path}"
+
+
+# Directories that are never worth searching.
+SKIP_DIRS = {".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache", "dist"}
+MAX_MATCHES = 200
+
+
+def _walk(root: Path, pattern: str):
+    for file in sorted(root.glob(pattern)):
+        if file.is_file() and not SKIP_DIRS & set(file.relative_to(root).parts):
+            yield file
+
+
+@tool(needs_approval=_path_outside_workspace)
+def list_files(
+    pattern: Annotated[str, "Glob pattern, e.g. '**/*.py' (default: all files)"] = "**/*",
+    path: Annotated[str, "Directory to search (default: working directory)"] = ".",
+) -> str:
+    """List files matching a glob pattern, skipping .git, .venv, node_modules and caches."""
+    files = [str(file) for file in _walk(Path(path), pattern)]
+    shown = files[:MAX_MATCHES]
+    more = f"\n[{len(files) - MAX_MATCHES} more files]" if len(files) > MAX_MATCHES else ""
+    return "\n".join(shown) + more if files else "No files found"
+
+
+@tool(needs_approval=_path_outside_workspace)
+def search_files(
+    regex: Annotated[str, "Regular expression to search for"],
+    path: Annotated[str, "Directory to search (default: working directory)"] = ".",
+    pattern: Annotated[str, "Only search files matching this glob (default: all)"] = "**/*",
+) -> str:
+    """Search file contents with a regular expression. Returns file:line: text for each match."""
+    compiled = re.compile(regex)
+    matches = []
+    for file in _walk(Path(path), pattern):
+        try:
+            lines = file.read_text(encoding="utf-8").splitlines()
+        except (UnicodeDecodeError, OSError):
+            continue  # binary or unreadable
+        for number, line in enumerate(lines, 1):
+            if compiled.search(line):
+                matches.append(f"{file}:{number}: {line.strip()[:200]}")
+                if len(matches) >= MAX_MATCHES:
+                    return "\n".join(matches) + f"\n[stopped at {MAX_MATCHES} matches]"
+    return "\n".join(matches) or "No matches"
+
+
 # --- shell ------------------------------------------------------------------
 
 @tool(needs_approval=True)
@@ -96,4 +159,5 @@ def run_shell(
             f"stderr:\n{completed.stderr}")
 
 
-DEFAULT_TOOLS = [calculator, read_file, write_file, run_shell]
+DEFAULT_TOOLS = [calculator, read_file, write_file, edit_file, list_files, search_files,
+                 run_shell]
