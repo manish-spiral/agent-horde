@@ -4,8 +4,9 @@ import httpx
 import pytest
 
 from horde.groq import GroqModel
-from horde.loop import StepLimitReached, run_agent
-from horde.tools import calculate, calculator
+from horde.builtin_tools import calculate, calculator
+from horde.loop import MAX_RESULT_CHARS, StepLimitReached, run_agent, run_tool
+from horde.tools import tool
 
 
 class FakeModel:
@@ -63,6 +64,46 @@ def test_stops_at_step_limit():
     model = FakeModel([tool_call("calculator", {"expression": "1+1"})] * 3)
     with pytest.raises(StepLimitReached):
         run_agent("loop forever", model, [calculator], max_steps=3)
+
+
+@tool(needs_approval=True)
+def risky(value: str) -> str:
+    """A tool that needs approval."""
+    return f"ran with {value}"
+
+
+def test_tool_needing_approval_is_denied_by_default():
+    assert run_tool({"risky": risky}, "risky", '{"value": "x"}') == \
+        "Error: the user did not allow risky to run"
+
+
+def test_approver_sees_parsed_arguments_and_can_allow():
+    seen = []
+
+    def approve(name, arguments):
+        seen.append((name, arguments))
+        return True
+
+    assert run_tool({"risky": risky}, "risky", '{"value": "x"}', approve) == "ran with x"
+    assert seen == [("risky", {"value": "x"})]
+
+
+def test_invalid_json_arguments_are_reported():
+    assert run_tool({"calculator": calculator}, "calculator", "{oops").startswith(
+        "Error: arguments are not valid JSON")
+    assert run_tool({"calculator": calculator}, "calculator", "[1]") == \
+        "Error: arguments must be a JSON object"
+
+
+def test_long_results_are_truncated():
+    @tool
+    def big() -> str:
+        """Return a lot of text."""
+        return "x" * (MAX_RESULT_CHARS + 5)
+
+    result = run_tool({"big": big}, "big", "{}")
+    assert result.endswith("[truncated: 5 more characters]")
+    assert len(result) < MAX_RESULT_CHARS + 50
 
 
 def test_calculator_does_arithmetic_only():

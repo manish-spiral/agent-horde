@@ -24,6 +24,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 000 | [Project kickoff](000-project-kickoff.md) | Planning |
 | 001 | [Choosing a language and model provider](001-language-choice.md) | Decision |
 | 002 | [Feature 1: The core agent loop](002-core-loop.md) | Feature |
+| 003 | [Feature 2: Tool interface and real tools](003-tools.md) | Feature |
 
 ## Reference
 

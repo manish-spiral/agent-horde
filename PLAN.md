@@ -24,7 +24,7 @@ The order is a proposal and will change as we learn.
 | #  | Feature | What it unlocks | Status |
 |----|---------|-----------------|--------|
 | 1  | Core agent loop | Model gets a task, calls a tool, sees the result, loops until done, with a CLI. Tested with a fake model. | done ([002](journal/002-core-loop.md)) |
-| 2  | Tool interface + basic tools | Adding a tool is trivial; read/write files, run shell | planned |
+| 2  | Tool interface + basic tools | Adding a tool is trivial; read/write files, run shell (with approval) | done ([003](journal/003-tools.md)) |
 | 3  | Control & safety | Approve/deny tool calls, step and cost limits, interrupt | planned |
 | 4  | Observability | Structured trace of every step; inspect and replay | planned |
 | 5  | Second model provider | Proves "any model"; the model abstraction is introduced here | planned |

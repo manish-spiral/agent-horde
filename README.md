@@ -30,3 +30,30 @@ Options:
 - `--max-steps N`: stop after N model calls (default 10)
 
 Steps are logged to stderr; the final answer goes to stdout.
+
+## Tools
+
+| Tool | Asks before running |
+|------|---------------------|
+| `calculator` | no |
+| `read_file` | no |
+| `write_file` | yes |
+| `run_shell` | yes |
+
+Tools that change things show you their arguments and wait for `y`.
+Anything else, or no terminal, means no.
+
+### Adding a tool
+
+```python
+from typing import Annotated
+from horde.tools import tool
+
+@tool(needs_approval=True)   # or just @tool
+def greet(name: Annotated[str, "who to greet"], times: int = 1) -> str:
+    """Greet someone."""   # the docstring becomes the description the model sees
+    return f"hello {name}\n" * times
+```
+
+The JSON Schema is generated from the type hints. Add the tool to
+`DEFAULT_TOOLS` in `src/horde/builtin_tools.py`.
