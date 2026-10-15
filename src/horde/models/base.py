@@ -1,8 +1,14 @@
 """What every model adapter shares: the contract and the HTTP call."""
 
+import time
 from typing import Protocol
 
 import httpx
+
+# Rate limits (429) and server hiccups (5xx) are usually temporary: retry them.
+RETRY_STATUSES = {408, 409, 429, 500, 502, 503, 504, 529}
+RETRIES = 3
+MAX_WAIT = 30.0
 
 
 class Model(Protocol):
@@ -28,7 +34,25 @@ def default_client() -> httpx.Client:
 
 
 def post_json(client: httpx.Client, url: str, headers: dict, body: dict, provider: str) -> dict:
-    response = client.post(url, headers=headers, json=body)
+    for attempt in range(RETRIES + 1):
+        response = None
+        try:
+            response = client.post(url, headers=headers, json=body)
+        except httpx.TransportError as error:  # connection dropped, DNS, timeout...
+            if attempt == RETRIES:
+                raise RuntimeError(f"{provider} connection failed: {error}") from error
+        else:
+            if response.status_code not in RETRY_STATUSES or attempt == RETRIES:
+                break
+        time.sleep(_wait_seconds(response, attempt))
     if response.is_error:
         raise RuntimeError(f"{provider} API error {response.status_code}: {response.text}")
     return response.json()
+
+
+def _wait_seconds(response: httpx.Response | None, attempt: int) -> float:
+    """The server's retry-after if it gave one, else exponential backoff: 1, 2, 4 s."""
+    try:
+        return min(float(response.headers["retry-after"]), MAX_WAIT)
+    except (AttributeError, KeyError, ValueError):
+        return float(2 ** attempt)

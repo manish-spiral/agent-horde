@@ -30,6 +30,7 @@ The order is a proposal and will change as we learn.
 | 5  | All major model providers | 3 adapters (OpenAI-format, Anthropic, Gemini), 13 providers, `Model` protocol | done ([006](journal/006-model-providers.md)) |
 | 5b | Coding tools | `edit_file`, `list_files`, `search_files` | done ([007](journal/007-coding-tools.md)) |
 | 6  | Chat + session persistence | Interactive multi-turn chat; save and `--resume` conversations | done ([008](journal/008-chat-and-sessions.md)) |
+| 6b | Automatic retries | Rate limits / 5xx / network errors retried with backoff | done ([010](journal/010-retries.md)) |
 | 7  | Self-correction | Errors and failed checks go back to the model to retry or verify | planned |
 | 8  | Planning | `update_plan` tool: agent keeps and updates an explicit task list | done ([009](journal/009-planning.md)) |
 | 9  | External tools via MCP | Connect to any tool server | planned |
