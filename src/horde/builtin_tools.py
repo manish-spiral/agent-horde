@@ -162,6 +162,27 @@ def update_plan(
     return f"Plan updated ({done}/{len(items)} done):\n" + "\n".join(items)
 
 
+# --- long-term memory -------------------------------------------------------
+# Facts saved here are loaded into every new conversation.
+
+MEMORY_FILE = Path.home() / ".horde" / "memory.md"
+
+
+@tool(needs_approval=True)  # memory shapes every future session: the user decides
+def remember(fact: Annotated[str, "One short fact worth knowing in future conversations"]) -> str:
+    """Save a fact to long-term memory (e.g. user preferences, project facts)."""
+    MEMORY_FILE.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with MEMORY_FILE.open("a", encoding="utf-8") as file:
+        file.write(f"- {' '.join(fact.split())}\n")
+    return "Remembered."
+
+
+def load_memory() -> str | None:
+    if not MEMORY_FILE.is_file():
+        return None
+    return MEMORY_FILE.read_text(encoding="utf-8").strip() or None
+
+
 # --- shell ------------------------------------------------------------------
 
 @tool(needs_approval=True)
@@ -181,4 +202,4 @@ def run_shell(
 
 
 DEFAULT_TOOLS = [calculator, read_file, write_file, edit_file, list_files, search_files,
-                 update_plan, run_shell]
+                 update_plan, remember, run_shell]

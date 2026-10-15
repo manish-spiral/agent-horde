@@ -103,6 +103,7 @@ set where they've been verified.
 | `list_files` | only outside the working directory |
 | `search_files` | only outside the working directory |
 | `update_plan` | no |
+| `remember` | yes (saves to `~/.horde/memory.md`, loaded into new conversations) |
 | `run_shell` | yes |
 
 The prompt shows the tool and its arguments. Answer `y` (yes), `n` (no) or

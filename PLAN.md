@@ -36,7 +36,7 @@ The order is a proposal and will change as we learn.
 | 7  | Self-correction | Errors and failed checks go back to the model to retry or verify | planned |
 | 8  | Planning | `update_plan` tool: agent keeps and updates an explicit task list | done ([009](journal/009-planning.md)) |
 | 9  | External tools via MCP | Connect to any tool server | planned |
-| 10 | Long-term memory | Facts that persist across sessions | planned |
+| 10 | Long-term memory | `remember` tool + `~/.horde/memory.md` loaded into new conversations (v1) | done ([013](journal/013-long-term-memory.md)) |
 | 11 | Learning from feedback | Corrections are saved and shape later behavior | planned |
 | 12 | Sub-agents | Agent delegates subtasks to other agents | planned |
 | 13 | Extensions | Load skills, tools and policies from a directory | planned |

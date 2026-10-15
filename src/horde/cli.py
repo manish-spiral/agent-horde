@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 
+from horde import builtin_tools
 from horde.builtin_tools import DEFAULT_TOOLS
 from horde.loop import LimitReached, new_conversation, run_agent
 from horde.models import PROVIDERS, create_model
@@ -105,10 +106,15 @@ INSTRUCTION_FILES = ("AGENTS.md", "HORDE.md")
 
 def project_instructions() -> str | None:
     found = [Path(name) for name in INSTRUCTION_FILES if Path(name).is_file()]
+    parts = [file.read_text(encoding="utf-8") for file in found]
+    memory = builtin_tools.load_memory()
+    if memory:
+        found.append(builtin_tools.MEMORY_FILE)
+        parts.append(f"Things you remembered from earlier sessions:\n{memory}")
     if not found:
         return None
     print(f"instructions: {', '.join(map(str, found))}", file=sys.stderr)
-    return "\n\n".join(file.read_text(encoding="utf-8") for file in found)
+    return "\n\n".join(parts)
 
 
 def chat_turns():
