@@ -65,6 +65,12 @@ Replay runs tools for real, behind the usual approval prompt.
 Put an `AGENTS.md` (or `HORDE.md`) in your project. Its contents are added to
 the agent's system prompt for every new conversation started there.
 
+## Skills
+
+Save reusable instructions as Markdown files in `~/.horde/skills/` (first line =
+summary). The agent sees the list and loads a skill with `use_skill` when a
+task matches.
+
 ## MCP tool servers
 
 List MCP servers in `~/.horde/mcp.json` (or pass `--mcp-config FILE`):

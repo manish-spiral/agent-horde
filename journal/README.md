@@ -38,6 +38,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 014 | [Feature 13: MCP tool servers](014-mcp.md) | Feature |
 | 015 | [Feature 14: Sub-agents](015-subagents.md) | Feature |
 | 016 | [Feature 15: Extensions](016-extensions.md) | Feature |
+| 017 | [Feature 16: Skills](017-skills.md) | Feature |
 
 ## Reference
 

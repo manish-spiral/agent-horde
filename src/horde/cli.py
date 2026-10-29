@@ -11,6 +11,7 @@ from horde.extensions import DEFAULT_TOOLS_DIR, load_tool_files
 from horde.loop import LimitReached, new_conversation, run_agent
 from horde.mcp import DEFAULT_MCP_CONFIG, load_mcp_servers
 from horde.models import PROVIDERS, create_model
+from horde.skills import DEFAULT_SKILLS_DIR, load_skills, make_skill_tool, skills_summary
 from horde.subagents import make_delegate_tool
 from horde.session import DEFAULT_SESSION_DIR, load_session, new_session_id, save_session
 from horde.trace import DEFAULT_TRACE_DIR, TraceWriter, print_event
@@ -64,22 +65,31 @@ def main() -> int:
                         help=f"where to save the run's trace (default: {DEFAULT_TRACE_DIR})")
     parser.add_argument("--tools-dir", type=Path, default=DEFAULT_TOOLS_DIR,
                         help=f"folder of your own tool files (default: {DEFAULT_TOOLS_DIR})")
+    parser.add_argument("--skills-dir", type=Path, default=DEFAULT_SKILLS_DIR,
+                        help=f"folder of skill files (default: {DEFAULT_SKILLS_DIR})")
     parser.add_argument("--mcp-config", type=Path, default=DEFAULT_MCP_CONFIG,
                         help=f"MCP servers to connect to (default: {DEFAULT_MCP_CONFIG})")
     args = parser.parse_args()
 
     try:
         model = create_model(args.provider, args.model, args.base_url)
+        skills = load_skills(args.skills_dir)
         if args.resume:
             session_id, messages = load_session(args.session_dir, args.resume)
         else:
-            session_id, messages = new_session_id(), new_conversation(project_instructions())
+            instructions = [part for part in (project_instructions(),
+                                              skills and skills_summary(skills)) if part]
+            session_id, messages = new_session_id(), new_conversation("\n\n".join(instructions))
         servers = load_mcp_servers(args.mcp_config)
         extensions = load_tool_files(args.tools_dir)
         tools = DEFAULT_TOOLS + extensions + [tool for server in servers for tool in server.tools()]
+        if skills:
+            tools.append(make_skill_tool(skills))
     except (RuntimeError, OSError, ValueError) as error:  # bad setup: fail before creating a trace
         print(f"error: {error}", file=sys.stderr)
         return 1
+    if skills:
+        print(f"skills: {', '.join(skills)}", file=sys.stderr)
     if extensions:
         print(f"extensions: {', '.join(tool.name for tool in extensions)}", file=sys.stderr)
     if servers:

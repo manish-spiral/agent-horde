@@ -40,6 +40,7 @@ The order is a proposal and will change as we learn.
 | 11 | Learning from feedback | Corrections are saved and shape later behavior | planned |
 | 12 | Sub-agents | `delegate` tool: helper agent with fresh context, depth 1 | done ([015](journal/015-subagents.md)) |
 | 13 | Extensions | Tool files from `~/.horde/tools/` (v1); skills next | done ([016](journal/016-extensions.md)) |
+| 13b | Skills | Markdown skills in `~/.horde/skills/`, listed by summary, loaded with `use_skill` | done ([017](journal/017-skills.md)) |
 
 Beyond 13: no fixed ceiling — new features are proposed as needs appear.
 
