@@ -65,6 +65,17 @@ Replay runs tools for real, behind the usual approval prompt.
 Put an `AGENTS.md` (or `HORDE.md`) in your project. Its contents are added to
 the agent's system prompt for every new conversation started there.
 
+## MCP tool servers
+
+List MCP servers in `~/.horde/mcp.json` (or pass `--mcp-config FILE`):
+
+```json
+{"mcpServers": {"myserver": {"command": "npx", "args": ["-y", "some-mcp-server"], "env": {}}}}
+```
+
+Their tools appear as `mcp__<server>__<tool>` and always ask before running.
+Project folders can't add servers on their own.
+
 ## Model providers
 
 | Provider | API format | Key variable | Default model |

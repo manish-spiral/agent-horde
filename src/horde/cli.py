@@ -8,6 +8,7 @@ from pathlib import Path
 from horde import builtin_tools
 from horde.builtin_tools import DEFAULT_TOOLS
 from horde.loop import LimitReached, new_conversation, run_agent
+from horde.mcp import DEFAULT_MCP_CONFIG, load_mcp_servers
 from horde.models import PROVIDERS, create_model
 from horde.session import DEFAULT_SESSION_DIR, load_session, new_session_id, save_session
 from horde.trace import DEFAULT_TRACE_DIR, TraceWriter, print_event
@@ -59,6 +60,8 @@ def main() -> int:
     parser.add_argument("--max-tokens", type=int, help="stop once this many tokens are used")
     parser.add_argument("--trace-dir", type=Path, default=DEFAULT_TRACE_DIR,
                         help=f"where to save the run's trace (default: {DEFAULT_TRACE_DIR})")
+    parser.add_argument("--mcp-config", type=Path, default=DEFAULT_MCP_CONFIG,
+                        help=f"MCP servers to connect to (default: {DEFAULT_MCP_CONFIG})")
     args = parser.parse_args()
 
     try:
@@ -67,9 +70,13 @@ def main() -> int:
             session_id, messages = load_session(args.session_dir, args.resume)
         else:
             session_id, messages = new_session_id(), new_conversation(project_instructions())
-    except RuntimeError as error:  # bad setup: fail before creating a trace
+        servers = load_mcp_servers(args.mcp_config)
+        tools = DEFAULT_TOOLS + [tool for server in servers for tool in server.tools()]
+    except (RuntimeError, OSError, ValueError) as error:  # bad setup: fail before creating a trace
         print(f"error: {error}", file=sys.stderr)
         return 1
+    if servers:
+        print(f"mcp: {', '.join(server.name for server in servers)}", file=sys.stderr)
     trace = TraceWriter(args.trace_dir)
     approve = TerminalApprover()  # one per session, so "always" lasts the whole chat
 
@@ -81,7 +88,7 @@ def main() -> int:
     try:
         for task in [args.task] if args.task else chat_turns():
             try:
-                answer = run_agent(task, model, DEFAULT_TOOLS, max_steps=args.max_steps,
+                answer = run_agent(task, model, tools, max_steps=args.max_steps,
                                    max_seconds=args.max_seconds, max_tokens=args.max_tokens,
                                    approve=approve, on_event=on_event, messages=messages)
                 print(answer)
@@ -93,6 +100,8 @@ def main() -> int:
         print("\ninterrupted", file=sys.stderr)
         exit_code = 130  # conventional exit code for Ctrl+C
     finally:
+        for server in servers:
+            server.close()
         save_session(args.session_dir, session_id, messages)
         trace.close()
         print(f"trace: {trace.path}", file=sys.stderr)
