@@ -11,7 +11,8 @@ from horde.extensions import DEFAULT_TOOLS_DIR, load_tool_files
 from horde.loop import LimitReached, new_conversation, run_agent
 from horde.mcp import DEFAULT_MCP_CONFIG, load_mcp_servers
 from horde.models import PROVIDERS, create_model
-from horde.skills import DEFAULT_SKILLS_DIR, load_skills, make_skill_tool, skills_summary
+from horde.skills import (DEFAULT_SKILLS_DIR, load_skills, make_save_skill_tool,
+                          make_skill_tool, skills_summary)
 from horde.subagents import make_delegate_tool
 from horde.session import DEFAULT_SESSION_DIR, load_session, new_session_id, save_session
 from horde.trace import DEFAULT_TRACE_DIR, TraceWriter, print_event
@@ -85,6 +86,7 @@ def main() -> int:
         tools = DEFAULT_TOOLS + extensions + [tool for server in servers for tool in server.tools()]
         if skills:
             tools.append(make_skill_tool(skills))
+        tools.append(make_save_skill_tool(args.skills_dir, skills))
     except (RuntimeError, OSError, ValueError) as error:  # bad setup: fail before creating a trace
         print(f"error: {error}", file=sys.stderr)
         return 1

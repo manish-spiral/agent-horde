@@ -39,9 +39,18 @@ the system prompt and serving `use_skill`. Not run live (Groq's daily limit was 
 
 ## Known gaps
 
-- Hermes Agent also **writes** skills itself after hard tasks. Here skills are
-  written by you. Letting the agent save skills (with approval) is a natural next step,
-  combining this with `remember` ([013](013-long-term-memory.md)).
+- Hermes Agent also **writes** skills itself after hard tasks. Done, see the update below.
+
+## Update: the agent can write skills (`save_skill`)
+
+Right after the first version, the gap above was closed. A `save_skill(name, content)`
+tool lets the agent save a procedure it worked out, as Hermes Agent does.
+- **Needs approval**: a saved skill steers every future session.
+- **Name validation** (`^[a-z0-9][a-z0-9-]{0,63}$`) blocks paths like `../escape`,
+  so a model can't write outside the skills folder.
+- The skill is usable via `use_skill` from the next session on.
+- Tests (**110 passed**): saved file round-trips through `load_skills`, approval
+  required, unsafe names rejected.
 
 ## What you should learn here
 

@@ -1,7 +1,7 @@
 import pytest
 
 from horde import cli
-from horde.skills import load_skills, make_skill_tool, skills_summary
+from horde.skills import load_skills, make_save_skill_tool, make_skill_tool, skills_summary
 from test_loop import FakeModel, answer, tool_call
 
 
@@ -40,3 +40,19 @@ def test_cli_lists_skills_and_offers_use_skill(skills_dir, monkeypatch):
 
 def test_no_skills_folder_means_no_tool(tmp_path):
     assert load_skills(tmp_path / "none") == {}
+
+
+def test_save_skill_writes_a_reusable_skill(tmp_path):
+    skills = {}
+    save_skill = make_save_skill_tool(tmp_path / "skills", skills)
+    assert save_skill.requires_approval({})
+    assert save_skill.function("deploy-docs", "Deploy the docs site\n1. run make\n") == \
+        "Saved skill 'deploy-docs'."
+    assert load_skills(tmp_path / "skills") == {"deploy-docs": "Deploy the docs site\n1. run make\n"}
+    assert "deploy-docs" in skills
+
+
+@pytest.mark.parametrize("name", ["Bad Name", "../escape", "", "x" * 70])
+def test_save_skill_rejects_unsafe_names(tmp_path, name):
+    with pytest.raises(ValueError, match="lowercase"):
+        make_save_skill_tool(tmp_path, {}).function(name, "text")

@@ -69,7 +69,7 @@ the agent's system prompt for every new conversation started there.
 
 Save reusable instructions as Markdown files in `~/.horde/skills/` (first line =
 summary). The agent sees the list and loads a skill with `use_skill` when a
-task matches.
+task matches. The agent can also save new skills with `save_skill` (asks first).
 
 ## MCP tool servers
 

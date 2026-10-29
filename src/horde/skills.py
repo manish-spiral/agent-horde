@@ -5,6 +5,7 @@ non-empty line is the summary. The agent always sees the list of names and
 summaries (cheap); it reads the full text with `use_skill` when a task matches.
 """
 
+import re
 from pathlib import Path
 from typing import Annotated
 
@@ -36,3 +37,25 @@ def make_skill_tool(skills: dict[str, str]) -> Tool:
         return skills[name]
 
     return use_skill
+
+
+SKILL_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+
+
+def make_save_skill_tool(directory: Path, skills: dict[str, str]) -> Tool:
+    @tool(needs_approval=True)  # skills steer future sessions: the user decides
+    def save_skill(
+        name: Annotated[str, "Short lowercase name with dashes, e.g. 'deploy-docs'"],
+        content: Annotated[str, "First line: one-sentence summary. Then the steps, "
+                                "written so a future agent can follow them without context"],
+    ) -> str:
+        """Save a reusable procedure you worked out as a skill for future sessions.
+        Use it after finishing a task that took real effort and is likely to recur."""
+        if not SKILL_NAME.match(name):
+            raise ValueError("name must be lowercase letters, digits and dashes")
+        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+        (directory / f"{name}.md").write_text(content.strip() + "\n", encoding="utf-8")
+        skills[name] = content
+        return f"Saved skill '{name}'."
+
+    return save_skill
