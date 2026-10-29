@@ -37,7 +37,7 @@ The order is a proposal and will change as we learn.
 | 8  | Planning | `update_plan` tool: agent keeps and updates an explicit task list | done ([009](journal/009-planning.md)) |
 | 9  | External tools via MCP | stdio MCP client; servers from `~/.horde/mcp.json` or `--mcp-config` | done ([014](journal/014-mcp.md)) |
 | 10 | Long-term memory | `remember` tool + `~/.horde/memory.md` loaded into new conversations (v1) | done ([013](journal/013-long-term-memory.md)) |
-| 11 | Learning from feedback | Corrections are saved and shape later behavior | planned |
+| 11 | Learning from feedback | Denial feedback reaches the model; `remember` / `save_skill` make it stick | partly done ([019](journal/019-denial-feedback.md)) |
 | 12 | Sub-agents | `delegate` tool: helper agent with fresh context, depth 1 | done ([015](journal/015-subagents.md)) |
 | 13 | Extensions | Tool files from `~/.horde/tools/` (v1); skills next | done ([016](journal/016-extensions.md)) |
 | 13b | Skills | Markdown skills in `~/.horde/skills/`, listed by summary, loaded with `use_skill` | done ([017](journal/017-skills.md)) |

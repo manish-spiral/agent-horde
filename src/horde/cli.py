@@ -35,15 +35,21 @@ class TerminalApprover:
             if len(text) > PREVIEW_CHARS:
                 text = text[:PREVIEW_CHARS] + f"... [{len(text) - PREVIEW_CHARS} more characters]"
             print(f"  {key}: {text}", file=sys.stderr)
-        print("Allow? [y]es / [n]o / [a]lways for this run: ", end="", file=sys.stderr, flush=True)
+        print("Allow? [y]es / [n]o / [a]lways for this run, or type what to do instead: ",
+              end="", file=sys.stderr, flush=True)
         try:
-            answer = input().strip().lower()
+            typed = input().strip()
         except EOFError:  # no interactive terminal: never allow
             return False
+        answer = typed.lower()
         if answer in ("a", "always"):
             self.always_allowed.add(name)
             return True
-        return answer in ("y", "yes")
+        if answer in ("y", "yes"):
+            return True
+        if answer in ("", "n", "no"):
+            return False
+        return typed  # denied, and the model is told why
 
 
 def main() -> int:

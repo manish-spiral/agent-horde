@@ -135,3 +135,17 @@ def test_setup_error_creates_no_trace(monkeypatch, capsys, private_trace_dir):
     assert cli.main() == 1
     assert "ANTHROPIC_API_KEY is not set" in capsys.readouterr().err
     assert not private_trace_dir.exists()
+
+
+def test_typed_feedback_denies_and_reaches_the_model(monkeypatch):
+    answers(monkeypatch, "No, use list_files instead")
+    approve = cli.TerminalApprover()
+    assert approve("run_shell", {"command": "ls"}) == "No, use list_files instead"
+
+    @tool(needs_approval=True)
+    def run_it() -> str:
+        """Needs approval."""
+        return "ran"
+
+    result = run_tool({"run_it": run_it}, "run_it", "{}", lambda n, a: "use the other tool")
+    assert result == "Error: the user did not allow run_it to run. They said: use the other tool"

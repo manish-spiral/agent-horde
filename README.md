@@ -125,8 +125,9 @@ set where they've been verified.
 | `run_shell` | yes |
 | `delegate` | no (the helper's own tools ask as usual) |
 
-The prompt shows the tool and its arguments. Answer `y` (yes), `n` (no) or
-`a` (always allow this tool for the rest of this run). Anything else, or no
+The prompt shows the tool and its arguments. Answer `y` (yes), `n` (no),
+`a` (always allow this tool for the rest of this run), or type what the agent
+should do instead (denies, and passes your words to the model). Anything else, or no
 terminal, means no.
 
 ### Adding a tool

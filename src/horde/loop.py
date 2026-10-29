@@ -33,8 +33,9 @@ CLEARED = "[old tool result cleared to save context]"
 
 TOKEN_KEYS = ("prompt_tokens", "completion_tokens", "total_tokens")
 
-# Decides whether a tool that needs approval may run: (tool name, arguments) -> yes/no.
-Approver = Callable[[str, dict], bool]
+# Decides whether a tool that needs approval may run: (tool name, arguments) ->
+# True to allow, False to deny, or a string: denied, with the user's feedback.
+Approver = Callable[[str, dict], "bool | str"]
 
 
 def deny_all(name: str, arguments: dict) -> bool:
@@ -155,7 +156,7 @@ def _run_recorded(tools_by_name: dict[str, Tool], call: dict,
     if not decision:
         approval = "not_needed"
     else:
-        approval = "approved" if decision["approved"] else "denied"
+        approval = "approved" if decision["approved"] is True else "denied"
     return result, approval, round(time.monotonic() - started, 3)
 
 
@@ -171,8 +172,11 @@ def run_tool(tools_by_name: dict[str, Tool], name: str, arguments: str,
         return f"Error: arguments are not valid JSON: {error}"
     if not isinstance(parsed, dict):
         return "Error: arguments must be a JSON object"
-    if tool.requires_approval(parsed) and not approve(name, parsed):
-        return f"Error: the user did not allow {name} to run"
+    if tool.requires_approval(parsed):
+        decision = approve(name, parsed)
+        if decision is not True:
+            feedback = f". They said: {decision}" if isinstance(decision, str) and decision else ""
+            return f"Error: the user did not allow {name} to run{feedback}"
     try:
         result = str(tool.function(**parsed))
     except Exception as error:
