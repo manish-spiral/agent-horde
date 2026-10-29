@@ -116,6 +116,7 @@ set where they've been verified.
 | `update_plan` | no |
 | `remember` | yes (saves to `~/.horde/memory.md`, loaded into new conversations) |
 | `run_shell` | yes |
+| `delegate` | no (the helper's own tools ask as usual) |
 
 The prompt shows the tool and its arguments. Answer `y` (yes), `n` (no) or
 `a` (always allow this tool for the rest of this run). Anything else, or no

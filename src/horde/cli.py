@@ -10,6 +10,7 @@ from horde.builtin_tools import DEFAULT_TOOLS
 from horde.loop import LimitReached, new_conversation, run_agent
 from horde.mcp import DEFAULT_MCP_CONFIG, load_mcp_servers
 from horde.models import PROVIDERS, create_model
+from horde.subagents import make_delegate_tool
 from horde.session import DEFAULT_SESSION_DIR, load_session, new_session_id, save_session
 from horde.trace import DEFAULT_TRACE_DIR, TraceWriter, print_event
 
@@ -83,6 +84,8 @@ def main() -> int:
     def on_event(event: dict) -> None:
         trace(event)
         print_event(event)
+
+    tools = tools + [make_delegate_tool(model, tools, approve, on_event)]
 
     exit_code = 0
     try:

@@ -36,6 +36,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 012 | [Feature 11: Context clearing](012-context-clearing.md) | Feature |
 | 013 | [Feature 12: Long-term memory](013-long-term-memory.md) | Feature |
 | 014 | [Feature 13: MCP tool servers](014-mcp.md) | Feature |
+| 015 | [Feature 14: Sub-agents](015-subagents.md) | Feature |
 
 ## Reference
 

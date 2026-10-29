@@ -84,4 +84,4 @@ def format_event(event: dict) -> str | None:
 def print_event(event: dict) -> None:
     line = format_event(event)
     if line:
-        print(line, file=sys.stderr)
+        print(("  ↳ " if event.get("subagent") else "") + line, file=sys.stderr)
