@@ -43,6 +43,8 @@ Options:
 - `--max-tokens N`: stop once N tokens have been used (checked between model calls)
 - `--trace-dir DIR`: where to save the trace (default `~/.horde/traces`)
 
+- `--verify COMMAND`: after each answer run this check (e.g. `"uv run pytest -q"`); on failure the agent gets the output and tries again (up to 3 times)
+
 Ctrl+C stops the run at any point (exit code 130).
 
 One line per step is shown on stderr; the final answer goes to stdout.

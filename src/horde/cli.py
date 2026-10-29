@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -74,6 +75,9 @@ def main() -> int:
                         help=f"folder of your own tool files (default: {DEFAULT_TOOLS_DIR})")
     parser.add_argument("--skills-dir", type=Path, default=DEFAULT_SKILLS_DIR,
                         help=f"folder of skill files (default: {DEFAULT_SKILLS_DIR})")
+    parser.add_argument("--verify", metavar="COMMAND",
+                        help="after each answer, run this check (e.g. 'pytest -q'); "
+                             "if it fails, the agent gets the output and tries again")
     parser.add_argument("--mcp-config", type=Path, default=DEFAULT_MCP_CONFIG,
                         help=f"MCP servers to connect to (default: {DEFAULT_MCP_CONFIG})")
     args = parser.parse_args()
@@ -115,10 +119,22 @@ def main() -> int:
     try:
         for task in [args.task] if args.task else chat_turns():
             try:
-                answer = run_agent(task, model, tools, max_steps=args.max_steps,
-                                   max_seconds=args.max_seconds, max_tokens=args.max_tokens,
-                                   approve=approve, on_event=on_event, messages=messages)
+                for attempt in range(1 + VERIFY_RETRIES):
+                    answer = run_agent(task, model, tools, max_steps=args.max_steps,
+                                       max_seconds=args.max_seconds, max_tokens=args.max_tokens,
+                                       approve=approve, on_event=on_event, messages=messages)
+                    failure = run_check(args.verify) if args.verify else None
+                    if failure is None:
+                        break
+                    print(f"verify: `{args.verify}` failed, asking the agent to fix it",
+                          file=sys.stderr)
+                    task = (f"The check `{args.verify}` failed after your last answer:\n"
+                            f"{failure}\nFix the problem.")
                 print(answer)
+                if failure is not None:
+                    print(f"error: `{args.verify}` still fails after {VERIFY_RETRIES} retries",
+                          file=sys.stderr)
+                    exit_code = 1
             except (RuntimeError, LimitReached) as error:
                 print(f"error: {error}", file=sys.stderr)
                 exit_code = 1
@@ -134,6 +150,19 @@ def main() -> int:
         print(f"trace: {trace.path}", file=sys.stderr)
         print(f"session: {session_id} (resume with --resume {session_id})", file=sys.stderr)
     return exit_code
+
+
+VERIFY_RETRIES = 3
+
+
+def run_check(command: str) -> str | None:
+    """Run the user's check command. None if it passed, else its (shortened) output."""
+    completed = subprocess.run(command, shell=True, capture_output=True, text=True,
+                               stdin=subprocess.DEVNULL)
+    if completed.returncode == 0:
+        return None
+    output = (completed.stdout + completed.stderr)[-5000:]
+    return f"exit code {completed.returncode}\n{output}"
 
 
 # Files whose contents are added to the system prompt, if found in the working directory.
