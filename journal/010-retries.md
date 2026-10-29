@@ -44,3 +44,10 @@ Live: `horde "what is 6*7?"` on Groq still answers 42.
   rate-limited server makes things worse.
 - **Make time injectable in tests.** Faking `sleep` keeps tests fast and lets
   you check the waiting logic exactly.
+
+## Update (after the live run in [015](015-subagents.md))
+
+Groq's free *daily* token limit answered 429 with `retry-after` of several
+minutes, and retrying every ≤30 s just wasted time. Now, if the server asks for
+a wait longer than 30 s, the request **fails immediately** with the server's
+message (e.g. "try again in 4m31s"). Test: `test_long_retry_after_fails_fast`.

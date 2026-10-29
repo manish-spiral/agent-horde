@@ -54,3 +54,11 @@ def test_client_errors_are_not_retried(waits):
     with pytest.raises(RuntimeError, match="400"):
         post_json(client, "http://x", {}, {}, "test")
     assert waits == []
+
+
+def test_long_retry_after_fails_fast(waits):
+    client = client_answering(httpx.Response(429, headers={"retry-after": "271"},
+                                             text="daily limit reached"))
+    with pytest.raises(RuntimeError, match="429: daily limit reached"):
+        post_json(client, "http://x", {}, {}, "test")
+    assert waits == []

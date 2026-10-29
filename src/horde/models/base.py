@@ -44,15 +44,22 @@ def post_json(client: httpx.Client, url: str, headers: dict, body: dict, provide
         else:
             if response.status_code not in RETRY_STATUSES or attempt == RETRIES:
                 break
+            if _retry_after(response) > MAX_WAIT:  # e.g. a daily limit: waiting won't help
+                break
         time.sleep(_wait_seconds(response, attempt))
     if response.is_error:
         raise RuntimeError(f"{provider} API error {response.status_code}: {response.text}")
     return response.json()
 
 
+def _retry_after(response: httpx.Response) -> float:
+    try:
+        return float(response.headers["retry-after"])
+    except (KeyError, ValueError):
+        return 0.0
+
+
 def _wait_seconds(response: httpx.Response | None, attempt: int) -> float:
     """The server's retry-after if it gave one, else exponential backoff: 1, 2, 4 s."""
-    try:
-        return min(float(response.headers["retry-after"]), MAX_WAIT)
-    except (AttributeError, KeyError, ValueError):
-        return float(2 ** attempt)
+    wait = _retry_after(response) if response is not None else 0.0
+    return wait if wait > 0 else float(2 ** attempt)

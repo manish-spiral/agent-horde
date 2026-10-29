@@ -44,7 +44,7 @@ error clearly.
 
 **Lesson from the live run:** retries cap their wait at 30 s, which suits
 per-minute limits but not daily ones. A long `retry-after` should fail fast with
-the message instead of waiting. That's a small follow-up.
+the message instead of waiting. Fixed right after: see the update in [010](010-retries.md).
 
 ## Known gaps
 
