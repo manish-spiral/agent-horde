@@ -134,5 +134,6 @@ def greet(name: Annotated[str, "who to greet"], times: int = 1) -> str:
     return f"hello {name}\n" * times
 ```
 
-The JSON Schema is generated from the type hints. Add the tool to
-`DEFAULT_TOOLS` in `src/horde/builtin_tools.py`.
+The JSON Schema is generated from the type hints. Save the file in
+`~/.horde/tools/` and it's loaded automatically (or add it to `DEFAULT_TOOLS`
+in `src/horde/builtin_tools.py`).

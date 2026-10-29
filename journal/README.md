@@ -37,6 +37,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 013 | [Feature 12: Long-term memory](013-long-term-memory.md) | Feature |
 | 014 | [Feature 13: MCP tool servers](014-mcp.md) | Feature |
 | 015 | [Feature 14: Sub-agents](015-subagents.md) | Feature |
+| 016 | [Feature 15: Extensions](016-extensions.md) | Feature |
 
 ## Reference
 

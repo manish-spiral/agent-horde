@@ -7,6 +7,7 @@ from pathlib import Path
 
 from horde import builtin_tools
 from horde.builtin_tools import DEFAULT_TOOLS
+from horde.extensions import DEFAULT_TOOLS_DIR, load_tool_files
 from horde.loop import LimitReached, new_conversation, run_agent
 from horde.mcp import DEFAULT_MCP_CONFIG, load_mcp_servers
 from horde.models import PROVIDERS, create_model
@@ -61,6 +62,8 @@ def main() -> int:
     parser.add_argument("--max-tokens", type=int, help="stop once this many tokens are used")
     parser.add_argument("--trace-dir", type=Path, default=DEFAULT_TRACE_DIR,
                         help=f"where to save the run's trace (default: {DEFAULT_TRACE_DIR})")
+    parser.add_argument("--tools-dir", type=Path, default=DEFAULT_TOOLS_DIR,
+                        help=f"folder of your own tool files (default: {DEFAULT_TOOLS_DIR})")
     parser.add_argument("--mcp-config", type=Path, default=DEFAULT_MCP_CONFIG,
                         help=f"MCP servers to connect to (default: {DEFAULT_MCP_CONFIG})")
     args = parser.parse_args()
@@ -72,10 +75,13 @@ def main() -> int:
         else:
             session_id, messages = new_session_id(), new_conversation(project_instructions())
         servers = load_mcp_servers(args.mcp_config)
-        tools = DEFAULT_TOOLS + [tool for server in servers for tool in server.tools()]
+        extensions = load_tool_files(args.tools_dir)
+        tools = DEFAULT_TOOLS + extensions + [tool for server in servers for tool in server.tools()]
     except (RuntimeError, OSError, ValueError) as error:  # bad setup: fail before creating a trace
         print(f"error: {error}", file=sys.stderr)
         return 1
+    if extensions:
+        print(f"extensions: {', '.join(tool.name for tool in extensions)}", file=sys.stderr)
     if servers:
         print(f"mcp: {', '.join(server.name for server in servers)}", file=sys.stderr)
     trace = TraceWriter(args.trace_dir)

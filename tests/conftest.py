@@ -10,6 +10,7 @@ def private_trace_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "DEFAULT_SESSION_DIR", tmp_path / "sessions")
     monkeypatch.setattr(builtin_tools, "MEMORY_FILE", tmp_path / "memory.md")
     monkeypatch.setattr(cli, "DEFAULT_MCP_CONFIG", tmp_path / "mcp.json")
+    monkeypatch.setattr(cli, "DEFAULT_TOOLS_DIR", tmp_path / "tools")
     return tmp_path / "traces"
 
 
