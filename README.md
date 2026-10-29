@@ -121,6 +121,7 @@ set where they've been verified.
 | `search_files` | only outside the working directory |
 | `update_plan` | no |
 | `remember` | yes (saves to `~/.horde/memory.md`, loaded into new conversations) |
+| `web_fetch` | yes (shows the URL first) |
 | `run_shell` | yes |
 | `delegate` | no (the helper's own tools ask as usual) |
 

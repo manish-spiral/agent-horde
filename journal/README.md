@@ -39,6 +39,7 @@ happened. Read it in order to see how a real project goes from an idea to workin
 | 015 | [Feature 14: Sub-agents](015-subagents.md) | Feature |
 | 016 | [Feature 15: Extensions](016-extensions.md) | Feature |
 | 017 | [Feature 16: Skills](017-skills.md) | Feature |
+| 018 | [Feature 17: Reading the web](018-web-fetch.md) | Feature |
 
 ## Reference
 

